@@ -306,5 +306,7 @@ int main() {
     else {
         Finding_min(size_of_general_data, new_x, new_y, gamma_fn);
     }
+    fclose(f1);
+    fclose(f2);
     return 0;
 }
