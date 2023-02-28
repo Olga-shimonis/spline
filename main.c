@@ -2,7 +2,7 @@
 #include<stdlib.h>
 #include <math.h>
 
-void Filling_of_diagonals(int n, double *low_d, double *main_d, double *upper_d, double *x, double *y, double *free_ch){
+void Filling_of_diagonals(int n, double *low_d, double *main_d, double *upper_d, const double *x, const     double *y, double *free_ch){
     double* h = (double*)calloc(n, sizeof(double));
     for (int i = 1; i <= n-1; i++){
         h[i] = x[i] - x[i-1];
@@ -10,7 +10,7 @@ void Filling_of_diagonals(int n, double *low_d, double *main_d, double *upper_d,
     for (int i = 0; i < n-2; i++){
         if (i != 0 && i != n-3){
             low_d[i] = h[i+1] / 6;
-            main_d[i] = (h[i+1]+h[i+1]) / 3;
+            main_d[i] = (h[i+1]+h[i+2]) / 3;
             upper_d[i] = h[i+2] / 6;
         }
         else if (i == 0){
@@ -28,7 +28,7 @@ void Filling_of_diagonals(int n, double *low_d, double *main_d, double *upper_d,
 }
 
 
-void Finding_gamma(int n, double *low_d, double *main_d, double *upper_d, double *free, double *gamma)
+void Finding_gamma(int n, const double *low_d, double *main_d, const double *upper_d, double *free, double *gamma)
 {
 
     double m;
@@ -83,7 +83,7 @@ void Joint_spline(double * x1, double * x2, double * y1, double * y2, double * n
         }
         else {
             new_x[index_n] = x2[index_2];
-            new_y[index_n] = y2[index_2];
+            new_y[index_n] = fabs(Spline(n1, gamma1, x1, y1, x2[index_2]) - y2[index_2]);
             index_2++; index_n++;
         }
     }
@@ -98,7 +98,7 @@ void Joint_spline(double * x1, double * x2, double * y1, double * y2, double * n
         }
         else {
             new_x[index_n] = x1[index_1];
-            new_y[index_n] = y1[index_1];
+            new_y[index_n] = fabs(Spline(n2, gamma2, x2, y2, x1[index_1]) - y1[index_1]);;
             index_1++; index_n++;
         }
     }
@@ -137,24 +137,25 @@ void Print_spline(int n, double * x, double *y, double * gamma){
         double start = x[i];
         for (int j = 0; start != x[i+1]; j++){
             start += st;
-            printf("%lf\n", Spline(n, gamma, x, y, start));
+            printf("%lf %lf\n", start, Spline(n, gamma, x, y, start));
         }
     }
 }
 int Find_cross(int n, double * x, double * y, double * gamma, double * x2, double * y2, int n2, double * gamma2){
-    double e = 0.001;
+    double e = 0.0001;
     int f = 0;
     for (int i = 0; i < n-1; i++) {
             double der = (Spline(n, gamma, x, y, x[i]+e) - Spline(n, gamma, x, y, x[i]))/e;
             double xn = x[i];
             while (xn <= x[i+1] && xn >= x[i]) {
-                if(fabs(Spline(n, gamma, x, y, xn)) < 0.0001) {
+                if(fabs(Spline(n, gamma, x, y, xn)) < 0.00000000001) {
                     printf("Coordinate of crossing: %lf %lf\n", xn, Spline(n2, gamma2, x2, y2, xn));
                     f = 1;
                     break;
 
+
                 }
-                der = (Spline(n, gamma, x, y, xn+e) - Spline(n, gamma, x, y, xn))/e;
+                //der = (Spline(n, gamma, x, y, xn+e) - Spline(n, gamma, x, y, xn))/e;
                 xn = xn - (Spline(n, gamma, x, y, xn)/der);
                 }
 
@@ -164,7 +165,7 @@ int Find_cross(int n, double * x, double * y, double * gamma, double * x2, doubl
         double der = (Spline(n, gamma, x, y, x[i]) - Spline(n, gamma, x, y, x[i] - e)) / e;
         double xn = x[i];
         while (xn <= x[i] && xn >= x[i - 1]) {
-            if (fabs(Spline(n, gamma, x, y, xn)) < 0.0001) {
+            if (fabs(Spline(n, gamma, x, y, xn)) < 0.0000000001) {
                 printf("Coordinate of crossing: %lf %lf\n", xn, Spline(n2, gamma2, x2, y2, xn));
                 f = 1;
                 break;
@@ -266,7 +267,6 @@ int main() {
         }
     }
     free(gamma2);
-    //printf("%lf", Spline(n2, gamma_f2, x2, y2));
 
 
     double* new_x = (double *)calloc(n1+n2, sizeof(double));
@@ -300,13 +300,11 @@ int main() {
     }
     free(gamma_n);
 
-    int f = Find_cross(size_of_general_data, new_x, new_y, gamma_fn, x1, y1, n1, gamma_f1);
-    if (f) {
-        Find_cross(size_of_general_data, new_x, new_y, gamma_fn, x1, y1, n1, gamma_f1);
+
+    if (Find_cross(size_of_general_data, new_x, new_y, gamma_fn, x1, y1, n1, gamma_f1)) {
     }
     else {
         Finding_min(size_of_general_data, new_x, new_y, gamma_fn);
     }
     return 0;
 }
-
